@@ -2,7 +2,7 @@
 venv/
 __pycache__/
 
-# Ignore model weights and data, but keep the folders
+# Ignore model weights and data
 models/*
 !models/.gitkeep
 data/*
