@@ -1,0 +1,9 @@
+# Environments
+venv/
+__pycache__/
+
+# Ignore model weights and data, but keep the folders
+models/*
+!models/.gitkeep
+data/*
+!data/.gitkeep
