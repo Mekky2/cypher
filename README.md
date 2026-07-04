@@ -35,6 +35,7 @@ Cypher is built to operate efficiently on local consumer hardware while maintain
 2. Initialize the Python virtual environment:
 ----------------------------------------------
 python -m venv venv
+
 source venv/bin/activate
 
 ----------------------------------------------
@@ -48,6 +49,7 @@ CMAKE_ARGS="-DGGML_CUDA=on" pip install -r requirements.txt
 4. Download the Qwen2.5-Coder 32B model (4-bit quantized) using the Hugging Face CLI:
 -------------------------------------------------------------------------------------------------------------
 hf auth login  # (Requires a Hugging Face Read Token)
+
 hf download Qwen/Qwen2.5-Coder-32B-Instruct-GGUF qwen2.5-coder-32b-instruct-q4_k_m.gguf --local-dir models/
 
 -------------------------------------------------------------------------------------------------------------
