@@ -7,3 +7,7 @@ models/*
 !models/.gitkeep
 data/*
 !data/.gitkeep
+
+# Track curated data and documentation
+!data/golden_dataset.jsonl
+!data/*.md

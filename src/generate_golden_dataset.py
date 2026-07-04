@@ -139,6 +139,106 @@ void create_array(int size) {
     // Process array...
 }
 ```"""
+        },
+        {
+            "instruction": instruction,
+            "input": """from flask import request, send_file
+import os
+
+@app.route('/download')
+def download_file():
+    filename = request.args.get('file')
+    # Vulnerable to Path Traversal
+    filepath = os.path.join('/var/www/uploads', filename)
+    return send_file(filepath)""",
+            "output": """VULNERABILITY DETECTED: Path Traversal (CWE-22).
+
+Step 1: The user input `filename` is directly concatenated into a file path, allowing attackers to use `../` to access files outside the intended directory.
+Step 2: Use `os.path.basename()` to strip any directory traversal characters and ensure only the exact filename is used.
+Step 3: Validate the final path explicitly.
+
+```python
+from flask import request, send_file, abort
+import os
+
+@app.route('/download')
+def download_file():
+    filename = request.args.get('file')
+    # Secure: extract only the base file name
+    safe_filename = os.path.basename(filename)
+    filepath = os.path.join('/var/www/uploads', safe_filename)
+    
+    if not os.path.exists(filepath):
+        abort(404)
+        
+    return send_file(filepath)
+```"""
+        },
+        {
+            "instruction": instruction,
+            "input": """import hashlib
+
+def hash_password(password):
+    # Vulnerable: MD5 is cryptographically broken
+    hasher = hashlib.md5()
+    hasher.update(password.encode('utf-8'))
+    return hasher.hexdigest()""",
+            "output": """VULNERABILITY DETECTED: Use of a Broken or Risky Cryptographic Algorithm (CWE-327).
+
+Step 1: The code uses MD5, which is vulnerable to collision attacks and is entirely unsuitable for hashing passwords.
+Step 2: Replace MD5 with a secure, key-derivation function designed for passwords, such as `bcrypt` or `Argon2`.
+Step 3: If general fast hashing is needed (not passwords), use SHA-256 or SHA-3.
+
+```python
+import bcrypt
+
+def hash_password(password):
+    # Secure: Generate a salt and hash using bcrypt
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed
+```"""
+        },
+        {
+            "instruction": instruction,
+            "input": """#include <string>
+#include <iostream>
+
+void connect_to_database() {
+    // Vulnerable: Hardcoded credentials
+    std::string db_user = "admin";
+    std::string db_pass = "SuperSecretPassword123!";
+    
+    std::cout << "Connecting as " << db_user << std::endl;
+    // connection logic...
+}""",
+            "output": """VULNERABILITY DETECTED: Use of Hard-coded Credentials (CWE-798).
+
+Step 1: Hardcoding passwords in source code exposes them to anyone who can read the repository or decompile the application.
+Step 2: Remove the hardcoded strings and retrieve the credentials dynamically from environment variables or a secure secret manager.
+
+```cpp
+#include <string>
+#include <iostream>
+#include <cstdlib>
+
+void connect_to_database() {
+    // Secure: Retrieve credentials from environment variables
+    const char* user_env = std::getenv("DB_USER");
+    const char* pass_env = std::getenv("DB_PASS");
+    
+    if (!user_env || !pass_env) {
+        std::cerr << "Error: Database credentials not set in environment." << std::endl;
+        return;
+    }
+    
+    std::string db_user(user_env);
+    std::string db_pass(pass_env);
+    
+    std::cout << "Connecting as " << db_user << std::endl;
+    // connection logic...
+}
+```"""
         }
     ]
 
