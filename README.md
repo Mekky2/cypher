@@ -33,13 +33,33 @@ Cypher is built to operate efficiently on local consumer hardware while maintain
 1. Clone the repository.
 
 2. Initialize the Python virtual environment:
-------------------------------------------------
+----------------------------------------------
 python -m venv venv
 source venv/bin/activate
 
-------------------------------------------------
-3. Install dependencies:
-------------------------------------------------
-pip install -r requirements.txt
+----------------------------------------------
 
-------------------------------------------------
+3. Install dependencies (Requires CUDA build tools for GPU acceleration):
+-------------------------------------------------------------
+CMAKE_ARGS="-DGGML_CUDA=on" pip install -r requirements.txt
+
+-------------------------------------------------------------
+
+4. Download the Qwen2.5-Coder 32B model (4-bit quantized) using the Hugging Face CLI:
+-------------------------------------------------------------------------------------------------------------
+hf auth login  # (Requires a Hugging Face Read Token)
+hf download Qwen/Qwen2.5-Coder-32B-Instruct-GGUF qwen2.5-coder-32b-instruct-q4_k_m.gguf --local-dir models/
+
+-------------------------------------------------------------------------------------------------------------
+
+5. Generate the Golden Dataset for Few-Shot Prompting:
+-----------------------------------------
+python src/generate_golden_dataset.py
+
+-----------------------------------------
+
+6. Run the Cypher Engine:
+-----------------------------------------
+python src/cypher_engine.py
+
+-----------------------------------------
