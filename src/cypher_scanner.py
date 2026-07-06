@@ -5,9 +5,9 @@ from llama_cpp import Llama
 # Import our custom modules
 # Because we are running from the src/ directory, we can import them directly
 import parser as ast_parser
-from cypher_engine import load_golden_examples, build_prompt
+from cypher_engine import load_golden_examples, build_prompt, init_vector_db, retrieve_similar_vulnerabilities
 
-def scan_file(filepath, llm, system_instruction, examples):
+def scan_file(filepath, llm, system_instruction, golden_examples, collection):
     """
     Parses a single file, extracts its functions, and analyzes each one.
     """
@@ -25,8 +25,16 @@ def scan_file(filepath, llm, system_instruction, examples):
     for i, func in enumerate(functions):
         print(f"\n    -> Analyzing function {i+1}/{len(functions)}: {func['name']}")
         
+        # --- THE MAGIC: RAG Context Retrieval ---
+        # Fetch the most similar historical vulnerability
+        rag_examples = retrieve_similar_vulnerabilities(collection, func['code'], n_results=1)
+        
+        # Combine 1 Golden Example (to teach output formatting) 
+        # + 1 RAG Example (to teach specific vulnerability knowledge)
+        combined_examples = golden_examples[:1] + rag_examples
+        
         # Build the ChatML prompt
-        prompt = build_prompt(system_instruction, examples, func['code'])
+        prompt = build_prompt(system_instruction, combined_examples, func['code'])
         
         # Run inference
         output = llm(
@@ -72,6 +80,13 @@ def main():
         verbose=False # Keep terminal output clean during scanning
     )
     
+    # Initialize the Vector DB
+    collection = init_vector_db()
+    if collection:
+        print(f"Connected to AI Memory Bank (Vector DB): {collection.count()} vulnerabilities loaded.")
+    else:
+        print("Warning: Vector DB not found. Running in standalone mode without RAG.")
+
     examples = load_golden_examples(dataset_path)
     
     # Tell the model what to do. If the code is safe, we tell it to explicitly state that.
@@ -82,13 +97,13 @@ def main():
     )
     
     if os.path.isfile(target_path):
-        scan_file(target_path, llm, system_instruction, examples)
+        scan_file(target_path, llm, system_instruction, examples, collection)
     elif os.path.isdir(target_path):
         # Walk through the directory and scan all supported files
         for root, _, files in os.walk(target_path):
             for file in files:
                 if file.endswith(('.py', '.c', '.cpp', '.cc', '.h', '.hpp')):
-                    scan_file(os.path.join(root, file), llm, system_instruction, examples)
+                    scan_file(os.path.join(root, file), llm, system_instruction, examples, collection)
     else:
         print(f"Error: Path {target_path} does not exist.")
 

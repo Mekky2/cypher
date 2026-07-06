@@ -1,6 +1,57 @@
 import json
 import os
+import chromadb
+from chromadb.utils import embedding_functions
 from llama_cpp import Llama
+
+def init_vector_db():
+    """Connects to the local ChromaDB."""
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    db_path = os.path.join(base_dir, 'data', 'chroma_db')
+    
+    if not os.path.exists(db_path):
+        return None
+        
+    client = chromadb.PersistentClient(path=db_path)
+    sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+    
+    try:
+        collection = client.get_collection(name="vulnerabilities", embedding_function=sentence_transformer_ef)
+        return collection
+    except Exception:
+        return None
+
+def retrieve_similar_vulnerabilities(collection, target_code, n_results=1):
+    """Queries the Vector DB for similar vulnerable functions."""
+    if not collection:
+        return []
+        
+    results = collection.query(
+        query_texts=[target_code],
+        n_results=n_results
+    )
+    
+    examples = []
+    if results['documents'] and results['documents'][0]:
+        for i in range(len(results['documents'][0])):
+            doc = results['documents'][0][i]
+            meta = results['metadatas'][0][i]
+            
+            cwe = meta.get('cwe', 'Unknown Vulnerability')
+            patch = meta.get('patch', '')
+            
+            # Format the historical vulnerability as a hint for the AI
+            output_text = f"VULNERABILITY DETECTED: {cwe}.\n\n"
+            if patch:
+                output_text += f"Step 1: Apply the historical patch to fix this {cwe} vulnerability.\n\n```\n{patch}\n```"
+            else:
+                output_text += f"Step 1: Manually review the code to mitigate {cwe}."
+                
+            examples.append({
+                "input": doc,
+                "output": output_text
+            })
+    return examples
 
 def load_golden_examples(filepath):
     """Loads the golden dataset to be used for Few-Shot prompting."""
