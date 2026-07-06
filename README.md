@@ -4,21 +4,23 @@ Cypher is a local, AI-powered static application security testing (SAST) tool. I
 
 # System Architecture
 
-Cypher prevents LLM "context bloat" and hallucination by breaking down massive codebases into highly focused, analyzable chunks:
+Cypher prevents LLM "context bloat" and hallucination by breaking down massive codebases into highly focused chunks and providing the AI with exact historical context:
 
-1. Context Chunker (src/parser.py): Uses tree-sitter to parse C, C++, and Python files exactly like a compiler does. It extracts individual functions and methods to prevent the AI from getting "lost in the middle" of massive files.
+1. Context Chunker (src/parser.py): Uses tree-sitter to parse C, C++, and Python files exactly like a compiler does. It extracts individual functions to prevent the AI from getting "lost in the middle" of massive files.
 
-2. AI Inference Engine (src/cypher_engine.py): Uses llama.cpp with GPU offloading and Flash Attention to run the 32B Qwen model locally. It uses Few-Shot prompting to force the AI to output structured, actionable patches.
+2. AI Memory Bank (src/build_vector_db.py): A local ChromaDB vector database. It embeds tens of thousands of real-world vulnerabilities (CVEs) from open-source datasets into highly searchable mathematical vectors using sentence-transformers.
 
-3. Master Scanner (src/cypher_scanner.py): Orchestrates the pipeline. It traverses target directories, chunks the files, feeds them to the AI, and generates the final vulnerability report.
+3. AI Inference Engine (src/cypher_engine.py): Uses llama.cpp with GPU offloading and Flash Attention to run the 32B Qwen model locally. It uses RAG (Retrieval-Augmented Generation) to fetch the closest matching historical vulnerability from ChromaDB and injects it into the prompt as a hint.
+
+4. Master Scanner (src/cypher_scanner.py): Orchestrates the pipeline. It traverses target directories, chunks the files, queries the Vector DB, feeds the combined context to the AI, and prints the step-by-step remediation plan.
 
 # Data Strategy
 
-Cypher uses a hybrid data approach to maximize accuracy:
+Cypher's accuracy comes from a hybrid data approach:
 
-* The Golden Dataset (golden_dataset.jsonl): A highly curated set of OWASP Top 10 vulnerabilities (Path Traversal, Hardcoded Secrets, SQLi, etc.) injected directly into the prompt to enforce strict output formatting.
+* The Golden Dataset: A curated set of highly formatted few-shot examples injected into the prompt to enforce strict output formatting (Step 1, Step 2, Patched Code).
 
-* The Mega Datasets: Massive open-source vulnerability databases (DiverseVul, BigVul, SecurityEval) downloaded locally to build Cypher's vulnerability intuition for future Fine-Tuning or RAG (Retrieval-Augmented Generation).
+* The Mega Datasets: Massive open-source vulnerability databases (DiverseVul, BigVul, SecurityEval) processed and stored in the AI's Vector Memory Bank to provide deep security intuition.
 
 # Getting Started
 
@@ -73,6 +75,13 @@ chmod +x scripts/download_raw_datasets.sh
 
 python src/generate_golden_dataset.py
 
+#### Process raw datasets into AI-ready format
+
+python src/process_local_data.py
+
+#### Build the ChromaDB Vector Memory Bank (~5-15 mins)
+
+python src/build_vector_db.py
 ----------------------------------------------------------------------
 
 ### Usage
@@ -87,7 +96,7 @@ python src/cypher_scanner.py <path_to_file_or_directory>
 ### Example:
 
 ----------------------------------------------------------------------
-python src/cypher_scanner.py src/parser.py
+python src/cypher_scanner.py tests/test_vulnerable.py
 
 ----------------------------------------------------------------------
 
