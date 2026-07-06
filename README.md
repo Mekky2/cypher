@@ -1,4 +1,4 @@
-# Cypher: Enterprise-Grade AI Security Scanner
+# Cypher: AI Security Scanner
 
 Cypher is a local, AI-powered static application security testing (SAST) tool. It leverages the 32-billion parameter Qwen2.5-Coder model and precise Abstract Syntax Tree (AST) parsing to audit codebases for vulnerabilities without sending your proprietary code to the cloud.
 
