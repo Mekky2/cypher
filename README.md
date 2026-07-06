@@ -4,7 +4,7 @@ Cypher is a local, AI-powered static application security testing (SAST) tool. I
 
 # System Architecture
 
-Cypher prevents LLM "context bloat" and hallucination by breaking down massive codebases into highly focused chunks and providing the AI with exact historical context:
+#### Cypher prevents LLM "context bloat" and hallucination by breaking down massive codebases into highly focused chunks and providing the AI with exact historical context:
 
 1. Context Chunker (src/parser.py): Uses tree-sitter to parse C, C++, and Python files exactly like a compiler does. It extracts individual functions to prevent the AI from getting "lost in the middle" of massive files.
 
