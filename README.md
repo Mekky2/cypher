@@ -22,7 +22,7 @@ Cypher uses a hybrid data approach to maximize accuracy:
 
 # Getting Started
 
-1. Prerequisites
+### 1. Prerequisites
 
 * Python 3.10+
 
@@ -32,35 +32,35 @@ Cypher uses a hybrid data approach to maximize accuracy:
 
 * Hugging Face CLI (hf)
 
-2. Installation
+## 2. Installation
 ----------------------------------------------------------------------
-1. Clone the repository
+### 1. Clone the repository
 
 git clone https://github.com/yourusername/cypher.git
 cd cypher
 
-2. Set up virtual environment
+### 2. Set up virtual environment
 
 python -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
 
-3. Install dependencies (Requires CUDA build tools for GPU acceleration)
+### 3. Install dependencies (Requires CUDA build tools for GPU acceleration)
 
 CMAKE_ARGS="-DGGML_CUDA=on" pip install -r requirements.txt
 
 ----------------------------------------------------------------------
 
-3. Download Models & Datasets
+## 3. Download Models & Datasets
 ----------------------------------------------------------------------
-1. Authenticate with Hugging Face
+### 1. Authenticate with Hugging Face
 
 hf auth login
 
-2. Download the Qwen2.5-Coder 32B model (4-bit quantized)
+### 2. Download the Qwen2.5-Coder 32B model (4-bit quantized)
 
 hf download Qwen/Qwen2.5-Coder-32B-Instruct-GGUF qwen2.5-coder-32b-instruct-q4_k_m.gguf --local-dir models/
 
-3. Download raw vulnerability datasets (DiverseVul, BigVul, SecurityEval)
+### 3. Download raw vulnerability datasets (DiverseVul, BigVul, SecurityEval)
 
 chmod +x scripts/download_raw_datasets.sh
 ./scripts/download_raw_datasets.sh
@@ -69,7 +69,7 @@ chmod +x scripts/download_raw_datasets.sh
 
 4. Setup the AI Brain
 ----------------------------------------------------------------------
-1. Generate the Few-Shot Golden Dataset
+### Generate the Few-Shot Golden Dataset
 
 python src/generate_golden_dataset.py
 
@@ -81,12 +81,14 @@ To scan a specific file or an entire directory, use the Master Scanner:
 
 ----------------------------------------------------------------------
 python src/cypher_scanner.py <path_to_file_or_directory>
+
 ----------------------------------------------------------------------
 
 ### Example:
 
 ----------------------------------------------------------------------
 python src/cypher_scanner.py src/parser.py
+
 ----------------------------------------------------------------------
 
 The scanner will output a step-by-step remediation plan and patched code blocks for any vulnerabilities it discovers.
