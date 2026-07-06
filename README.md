@@ -1,67 +1,80 @@
-# Cypher
+Cypher: Enterprise-Grade AI Security Scanner
 
-Cypher is an AI-driven Static Application Security Testing (SAST) tool designed to analyze Python and C/C++ codebases. It detects vulnerabilities (such as buffer overflows, memory leaks, injection flaws) and generates clear, step-by-step instructions on how to patch them.
+Cypher is a local, AI-powered static application security testing (SAST) tool. It leverages the 32-billion parameter Qwen2.5-Coder model and precise Abstract Syntax Tree (AST) parsing to audit codebases for vulnerabilities without sending your proprietary code to the cloud.
 
-# Architecture & Tech Stack
+System Architecture
 
-Cypher is built to operate efficiently on local consumer hardware while maintaining enterprise-grade context windows for large codebases.
+Cypher prevents LLM "context bloat" and hallucination by breaking down massive codebases into highly focused, analyzable chunks:
 
-> Base Model: Qwen3-Coder 30B
+Context Chunker (src/parser.py): Uses tree-sitter to parse C, C++, and Python files exactly like a compiler does. It extracts individual functions and methods to prevent the AI from getting "lost in the middle" of massive files.
 
-> Quantization: 4-bit (Q4_K_M) via GGUF to fit within consumer VRAM limits.
+AI Inference Engine (src/cypher_engine.py): Uses llama.cpp with GPU offloading and Flash Attention to run the 32B Qwen model locally. It uses Few-Shot prompting to force the AI to output structured, actionable patches.
 
-> Inference Engine: llama.cpp / vLLM optimized for PagedAttention.
+Master Scanner (src/cypher_scanner.py): Orchestrates the pipeline. It traverses target directories, chunks the files, feeds them to the AI, and generates the final vulnerability report.
 
-> Hardware Target: 24GB VRAM (e.g., RTX 3090 Ti).
+Data Strategy
 
-> Context Window: Configured for 300,000+ tokens to ingest large, multi-file C++ repositories without context fragmentation.
+Cypher uses a hybrid data approach to maximize accuracy:
 
-> Orchestration: Python (Parsing, Prompting, and Patch Formatting).
+The Golden Dataset (golden_dataset.jsonl): A highly curated set of OWASP Top 10 vulnerabilities (Path Traversal, Hardcoded Secrets, SQLi, etc.) injected directly into the prompt to enforce strict output formatting.
 
-# Project Structure
+The Mega Datasets: Massive open-source vulnerability databases (DiverseVul, BigVul, SecurityEval) downloaded locally to build Cypher's vulnerability intuition for future Fine-Tuning or RAG (Retrieval-Augmented Generation).
 
-> src/: Python orchestrator code (AST parsing, chunking, and AI pipeline logic).
+Getting Started
 
-> models/: Directory for local open-weight model GGUF files and LoRA adapters. (Ignored in git)
+1. Prerequisites
 
-> data/: Vulnerability datasets for fine-tuning and evaluation. (Ignored in git)
+Python 3.10+
 
-> tests/: Vulnerable C++ and Python scripts to verify model accuracy.
+NVIDIA GPU with ~24GB VRAM (e.g., RTX 3090 / 4090)
 
-# Getting Started
+CUDA Toolkit (for hardware acceleration)
 
-1. Clone the repository.
+Hugging Face CLI (hf)
 
-2. Initialize the Python virtual environment:
-----------------------------------------------
+2. Installation
+
+# Clone the repository
+git clone https://github.com/yourusername/cypher.git
+cd cypher
+
+# Set up virtual environment
 python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
 
-source venv/bin/activate
-
-----------------------------------------------
-
-3. Install dependencies (Requires CUDA build tools for GPU acceleration):
--------------------------------------------------------------
+# Install dependencies (Requires CUDA build tools for GPU acceleration)
 CMAKE_ARGS="-DGGML_CUDA=on" pip install -r requirements.txt
 
--------------------------------------------------------------
 
-4. Download the Qwen2.5-Coder 32B model (4-bit quantized) using the Hugging Face CLI:
--------------------------------------------------------------------------------------------------------------
-hf auth login  # (Requires a Hugging Face Read Token)
+3. Download Models & Datasets
 
+# Authenticate with Hugging Face
+hf auth login
+
+# Download the Qwen2.5-Coder 32B model (4-bit quantized)
 hf download Qwen/Qwen2.5-Coder-32B-Instruct-GGUF qwen2.5-coder-32b-instruct-q4_k_m.gguf --local-dir models/
 
--------------------------------------------------------------------------------------------------------------
+# Download raw vulnerability datasets (DiverseVul, BigVul, SecurityEval)
+chmod +x scripts/download_raw_datasets.sh
+./scripts/download_raw_datasets.sh
 
-5. Generate the Golden Dataset for Few-Shot Prompting:
------------------------------------------
+
+4. Setup the AI Brain
+
+# Generate the Few-Shot Golden Dataset
 python src/generate_golden_dataset.py
 
------------------------------------------
 
-6. Run the Cypher Engine:
------------------------------------------
-python src/cypher_engine.py
+Usage
 
------------------------------------------
+To scan a specific file or an entire directory, use the Master Scanner:
+
+python src/cypher_scanner.py <path_to_file_or_directory>
+
+
+Example:
+
+python src/cypher_scanner.py src/parser.py
+
+
+The scanner will output a step-by-step remediation plan and patched code blocks for any vulnerabilities it discovers.
