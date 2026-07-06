@@ -16,7 +16,7 @@ Cypher is a local, AI-powered static application security testing (SAST) tool. I
 
 # Data Strategy
 
-Cypher's accuracy comes from a hybrid data approach:
+#### Cypher's accuracy comes from a hybrid data approach:
 
 * The Golden Dataset: A curated set of highly formatted few-shot examples injected into the prompt to enforce strict output formatting (Step 1, Step 2, Patched Code).
 
